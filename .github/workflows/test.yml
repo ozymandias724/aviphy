@@ -20,18 +20,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install Bun
+      # Install Bun runtime
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      # Install dependencies
+      # Install project dependencies
       - name: Install dependencies
         run: bun install
+
+      # Runtime scratch space used
+      # by integration conversion tests
+      #
+      # fixtures/ is tracked in git
+      # tmp/ is intentionally ephemeral
+      - name: Create tmp directory
+        run: mkdir -p tmp
 
       # Install avifenc (Ubuntu)
       - name: Install libavif (Ubuntu)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libavif-bin
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libavif-bin
 
       # Install avifenc (macOS)
       - name: Install libavif (macOS)
@@ -39,10 +49,13 @@ jobs:
         run: brew install libavif
 
       # Install avifenc (Windows)
+      #
+      # Windows support is currently
+      # experimental/validation-stage
       - name: Install libavif (Windows)
         if: runner.os == 'Windows'
         run: choco install libavif -y
 
-      # Run tests
+      # Run full test suite
       - name: Run tests
         run: bun test
