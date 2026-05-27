@@ -54,7 +54,7 @@ jobs:
       # experimental/validation-stage
       - name: Install libavif (Windows)
         if: runner.os == 'Windows'
-        run: choco install libavif -y
+        run: choco install libavif -y --pre
 
       # Run full test suite
       - name: Run tests
