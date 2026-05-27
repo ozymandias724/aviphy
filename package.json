@@ -1,5 +1,5 @@
 {
-  "name": "aviffy",
+  "name": "aviphy",
   "version": "0.1.0",
   "description": "Animated image to AVIF conversion pipeline built with Bun and Sharp.",
   "type": "module",

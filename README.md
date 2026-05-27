@@ -1,4 +1,4 @@
-# animated-image-to-avif
+# aviphy
 
 Animated image → AVIF conversion pipeline built with Bun, Sharp, and `avifenc`.
 
