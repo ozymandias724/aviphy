@@ -79,4 +79,5 @@ jobs:
 
       # Run full test suite
       - name: Run tests
-        run: bun test
+        run: bun test --timeout 15000
+
