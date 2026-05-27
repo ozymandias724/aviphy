@@ -59,11 +59,17 @@ jobs:
 
           Expand-Archive `
             -Path "libavif.zip" `
-            -DestinationPath "C:\\libavif"
+            -DestinationPath "C:\libavif"
 
           Add-Content `
             -Path $env:GITHUB_PATH `
-            -Value "C:\\libavif\\bin"
+            -Value "C:\libavif\bin"
+
+      # Verify libavif extraction (Windows)
+      - name: Verify libavif extraction
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ls -Force C:\libavif\bin
 
       # Validate encoder availability
       - name: Verify avifenc
