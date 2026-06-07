@@ -1,12 +1,12 @@
 import { spawn } from "node:child_process";
 
 import type { LogLevel } from "./log";
+import { resolveAvifencBinary } from "./resolveBinary";
 
 type AvifEncoderOptions = {
   output: string;
   quality: number;
   speed: number;
-
   logLevel: LogLevel;
 };
 
@@ -16,8 +16,14 @@ export function createAvifEncoder({
   speed,
   logLevel,
 }: AvifEncoderOptions) {
+  const avifencPath = resolveAvifencBinary();
+
+  if (logLevel === "debug") {
+    console.log(`Using avifenc binary: ${avifencPath}`);
+  }
+
   // Spawn avifenc as a streaming child process
-  const encoder = spawn("avifenc", [
+  const encoder = spawn(avifencPath, [
     "--stdin",
 
     // BT.709 / sRGB signaling
@@ -64,16 +70,13 @@ export function createAvifEncoder({
   }
 
   // Helpful during debugging / failure tracing
-  encoder.on("close", (code) => {
-    if (logLevel === "debug") {
-      console.log(`\navifenc exited with code ${code}`);
-    }
+  encoder.on("close", (code, signal) => {
+    console.log(`avifenc exited with code ${code} and signal ${signal}`);
   });
 
   // Child process launch/runtime failures
   encoder.on("error", (error) => {
     console.error("\navifenc process error:");
-
     console.error(error);
   });
 

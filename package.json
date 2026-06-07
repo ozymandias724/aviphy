@@ -25,6 +25,7 @@
   "license": "MIT",
   "files": [
     "dist",
+    "bin",
     "README.md",
     "LICENSE"
   ],
