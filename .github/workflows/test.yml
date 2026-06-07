@@ -36,48 +36,6 @@ jobs:
       - name: Create tmp directory
         run: mkdir -p tmp
 
-      # Install avifenc (Ubuntu)
-      - name: Install libavif (Ubuntu)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libavif-bin
-
-      # Install avifenc (macOS)
-      - name: Install libavif (macOS)
-        if: runner.os == 'macOS'
-        run: brew install libavif
-
-      # Install avifenc (Windows)
-      #
-      # Windows package manager support
-      # for avifenc is inconsistent, so
-      # install upstream binaries directly.
-      - name: Install avifenc (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          # Download prebuilt avifenc binary
-          Invoke-WebRequest `
-            -Uri "https://github.com/AOMediaCodec/libavif/releases/download/v1.4.2/windows-artifacts.zip" `
-            -OutFile "libavif.zip"
-
-          # Extract archive
-          Expand-Archive `
-            -Path "libavif.zip" `
-            -DestinationPath "C:\tools"
-
-          # Find and add avifenc.exe location to PATH
-          $avifencPath = (Get-ChildItem -Path "C:\tools" -Filter "avifenc.exe" -Recurse).Directory.FullName
-          Add-Content `
-            -Path $env:GITHUB_PATH `
-            -Value $avifencPath
-
-      # Validate encoder availability
-      - name: Verify avifenc
-        run: avifenc --version
-
       # Run full test suite
       - name: Run tests
         run: bun test --timeout 15000
-
