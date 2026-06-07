@@ -10,20 +10,25 @@ export type AnimationFrame = {
 
 type ExtractFrameOptions = {
   input: string;
-
   frame: number;
-
   hasAlpha: boolean;
 };
 
-// Extract and repack
-// a single animation frame
+/**
+ * Extract a single animation frame and convert
+ * Sharp's interleaved RGB(A) pixel layout into
+ * the planar GBR(A) format expected by Y4M.
+ */
 export async function extractFrame({
   input,
   frame,
   hasAlpha,
 }: ExtractFrameOptions): Promise<AnimationFrame> {
-  // Sharp extracts raw interleaved pixel data
+  /**
+   * Sharp returns raw interleaved pixels:
+   *
+   * RGBARGBARGBA...
+   */
   const { data, info } = await sharp(input, {
     animated: true,
     page: frame,
@@ -36,25 +41,29 @@ export async function extractFrame({
 
   const pixelCount = info.width * info.height;
 
-  // Y4M expects planar channel ordering
+  /**
+   * Y4M expects separate color planes:
+   *
+   * GGGGG...
+   * BBBBB...
+   * RRRRR...
+   * AAAAA...
+   */
   const gPlane = Buffer.alloc(pixelCount);
-
   const bPlane = Buffer.alloc(pixelCount);
-
   const rPlane = Buffer.alloc(pixelCount);
 
-  // Optional alpha plane
   const aPlane = hasAlpha ? Buffer.alloc(pixelCount) : null;
 
-  // Repack interleaved RGB(A)
-  // into planar GBR(A)
+  /**
+   * Repack interleaved RGB(A) data into
+   * planar GBR(A) channel buffers.
+   */
   for (let i = 0; i < pixelCount; i++) {
     const offset = i * info.channels;
 
     const r = data[offset];
-
     const g = data[offset + 1];
-
     const b = data[offset + 2];
 
     gPlane[i] = g;

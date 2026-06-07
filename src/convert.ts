@@ -1,36 +1,48 @@
 /// <reference types="node" />
 
 import fs from "node:fs";
-import { createLogger } from "./log";
+
+import { createLogger } from "./logger";
 import { resolveConfig } from "./config";
 import { getAnimationMetadata } from "./metadata";
 import { extractFrame } from "./frame";
 import { buildY4MHeader, writeFrame, expandFrameTimings } from "./y4m";
 import { createAvifEncoder } from "./avifenc";
+
 import type { ConvertOptions } from "./config";
 import type { AnimationFrame } from "./frame";
 import type { ConversionResult } from "./result";
 
-// Main animated image → AVIF conversion pipeline
+/**
+ * Main animated image → AVIF conversion pipeline.
+ */
 export async function convert(
   options: ConvertOptions,
 ): Promise<ConversionResult> {
-  // Normalize and validate config up front
+  /**
+   * Normalize and validate user configuration.
+   */
   const { input, output, preset, quality, speed, preserveAlpha, logLevel } =
     resolveConfig(options);
 
-  // Runtime callbacks are not configuration
+  /**
+   * Runtime callbacks are not configuration.
+   */
   const { onProgress } = options;
 
   const logger = createLogger(logLevel);
 
-  // Track total conversion duration
+  /**
+   * Track total conversion duration.
+   */
   const startTime = performance.now();
 
-  // Capture original input filesize
+  /**
+   * Capture original input size for reporting.
+   */
   const inputSize = fs.statSync(input).size;
 
-  logger.verbose("Loading animation metadata...");
+  logger.log("Loading animation metadata...");
 
   onProgress?.({
     type: "stage",
@@ -39,32 +51,32 @@ export async function convert(
 
   const metadata = await getAnimationMetadata(input);
 
-  logger.debug("\nFULL METADATA:");
+  logger.debug("Animation metadata:");
   logger.debug(metadata);
 
-  // Respect source alpha unless explicitly disabled
+  /**
+   * Respect source alpha unless explicitly disabled.
+   */
   const hasAlpha = metadata.hasAlpha && preserveAlpha;
 
-  logger.verbose(`Frames detected: ${metadata.pages}`);
+  logger.log("Conversion settings:");
+  logger.log({
+    source: {
+      frames: metadata.pages,
+      resolution: `${metadata.width}x${metadata.height}`,
+      sourceAlpha: metadata.hasAlpha,
+      encodingAlpha: hasAlpha,
+    },
 
-  logger.verbose(`Resolution: ${metadata.width}x${metadata.height}`);
-
-  logger.verbose(`Source alpha detected: ${metadata.hasAlpha}`);
-
-  logger.verbose(`Encoding alpha: ${hasAlpha}`);
-
-  logger.verbose("\nEncoding settings:");
-
-  logger.verbose({
-    preset: preset ?? "custom",
-
-    quality,
-    speed,
+    encoding: {
+      preset: preset ?? "custom",
+      quality,
+      speed,
+    },
   });
 
-  logger.debug("Launching avifenc process");
+  logger.log("Launching AVIF encoder...");
 
-  // Streaming encoder child process
   const avifenc = createAvifEncoder({
     output,
     quality,
@@ -72,7 +84,9 @@ export async function convert(
     logLevel,
   });
 
-  // Build timing-aware Y4M stream header
+  /**
+   * Build the Y4M stream header consumed by avifenc.
+   */
   const header = buildY4MHeader({
     width: metadata.width,
     height: metadata.height,
@@ -80,7 +94,7 @@ export async function convert(
     delays: metadata.delays,
   });
 
-  logger.debug("\nY4M HEADER:");
+  logger.debug("Generated Y4M header:");
   logger.debug(header);
 
   avifenc.stdin.write(header);
@@ -90,12 +104,22 @@ export async function convert(
     stage: "frames",
   });
 
-  // Expand variable animation timing
-  // into a normalized frame timeline
+  /**
+   * Convert source frame delays into a normalized
+   * timeline where repeated frames preserve the
+   * original animation timing.
+   */
   const { expandedFrames } = expandFrameTimings(metadata.delays);
 
-  // Cache decoded source frames
-  // so timing duplication avoids re-extraction
+  logger.log(`Streaming ${expandedFrames.length} frame(s)...`);
+
+  /**
+   * Frame timing expansion can reference the same
+   * source frame multiple times.
+   *
+   * Cache decoded frames to avoid redundant Sharp
+   * extraction work.
+   */
   const frameCache = new Map<number, AnimationFrame>();
 
   for (let index = 0; index < expandedFrames.length; index++) {
@@ -107,11 +131,14 @@ export async function convert(
       total: expandedFrames.length,
     });
 
-    logger.debug(`Processing frame ${index + 1}/${expandedFrames.length}`);
+    // Logging every frame can be noisy, but the debug log level is available for users who want that level of detail.
+    logger.debug(`Processing frame ${index + 1} of ${expandedFrames.length}`);
 
     let frameData = frameCache.get(frame);
 
-    // Extract each source frame once
+    /**
+     * Extract each source frame once.
+     */
     if (!frameData) {
       frameData = await extractFrame({
         input,
@@ -122,7 +149,10 @@ export async function convert(
       frameCache.set(frame, frameData);
     }
 
-    // Duplicate writes preserve timing
+    /**
+     * Repeated writes preserve timing in the
+     * normalized animation timeline.
+     */
     writeFrame(avifenc.stdin, frameData);
   }
 
@@ -133,23 +163,21 @@ export async function convert(
     stage: "encoding",
   });
 
-  // Wait for encoder process completion
-  //
-  // Encoding subprocesses can occasionally:
-  // - hang
-  // - deadlock
-  // - stall on IO
-  //
-  // Protect against indefinite waits.
+  logger.log("Encoding AVIF...");
+
+  /**
+   * Wait for encoder completion.
+   *
+   * A defensive timeout protects callers from
+   * indefinitely hanging child processes.
+   */
   await new Promise<void>((resolve, reject) => {
-    // Runtime-safe timer typing
     let timeoutHandle: ReturnType<typeof setTimeout>;
 
     const cleanup = () => {
       clearTimeout(timeoutHandle);
     };
 
-    // Defensive encoder timeout
     timeoutHandle = setTimeout(() => {
       avifenc.kill();
 
@@ -159,25 +187,21 @@ export async function convert(
     avifenc.on("close", (code, signal) => {
       cleanup();
 
-      // Successful encoder completion
       if (code === 0) {
         resolve();
 
         return;
       }
 
-      // Process terminated by signal
       if (signal) {
         reject(new Error(`avifenc killed by signal ${signal}`));
 
         return;
       }
 
-      // Non-zero encoder exit
       reject(new Error(`avifenc exited with code ${code ?? "unknown"}`));
     });
 
-    // Spawn/runtime process errors
     avifenc.on("error", (error) => {
       cleanup();
 
@@ -185,14 +209,18 @@ export async function convert(
     });
   });
 
-  // Capture final output filesize
+  /**
+   * Collect final output statistics.
+   */
   const outputSize = fs.statSync(output).size;
 
   const reductionPercent = (1 - outputSize / inputSize) * 100;
 
   const durationMs = performance.now() - startTime;
 
-  // Structured conversion result contract
+  /**
+   * Structured conversion result contract.
+   */
   return {
     inputSize,
     outputSize,
