@@ -25,7 +25,7 @@ describe("resolveConfig", () => {
 
         preserveAlpha: true,
 
-        logLevel: "quiet",
+        logLevel: "normal",
       });
     });
 
@@ -52,7 +52,7 @@ describe("resolveConfig", () => {
 
         preserveAlpha: true,
 
-        logLevel: "quiet",
+        logLevel: "normal",
       });
     });
 
@@ -82,7 +82,7 @@ describe("resolveConfig", () => {
 
         preserveAlpha: true,
 
-        logLevel: "quiet",
+        logLevel: "normal",
       });
     });
   });
