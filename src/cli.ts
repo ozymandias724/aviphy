@@ -3,14 +3,20 @@
 import { convert } from "./convert";
 
 import type { PresetName } from "./presets";
-import type { LogLevel } from "./log";
+import { createLogger, type LogLevel } from "./logger";
+
 import { formatBytes, formatDuration, formatReduction } from "./format";
 
-// Simple CLI adapter
-// Thin wrapper around the conversion engine
+/**
+ * Thin CLI wrapper around the conversion engine.
+ *
+ * Responsible for:
+ * - Parsing command-line arguments
+ * - Invoking the conversion engine
+ * - Formatting human-readable output
+ */
 
 const input = process.argv[2];
-
 const output = process.argv[3];
 
 if (!input || !output) {
@@ -19,7 +25,12 @@ if (!input || !output) {
   process.exit(1);
 }
 
-// Numeric flag helper
+/**
+ * Read a numeric flag from argv.
+ *
+ * Example:
+ * --quality 80
+ */
 function getNumberFlag(flag: string, fallback: number) {
   const index = process.argv.indexOf(flag);
 
@@ -29,14 +40,15 @@ function getNumberFlag(flag: string, fallback: number) {
 
   const value = Number(process.argv[index + 1]);
 
-  if (Number.isNaN(value)) {
-    return fallback;
-  }
-
-  return value;
+  return Number.isNaN(value) ? fallback : value;
 }
 
-// String flag helper
+/**
+ * Read a string flag from argv.
+ *
+ * Example:
+ * --preset web
+ */
 function getStringFlag(flag: string) {
   const index = process.argv.indexOf(flag);
 
@@ -47,26 +59,44 @@ function getStringFlag(flag: string) {
   return process.argv[index + 1];
 }
 
-const preserveAlpha = !process.argv.includes("--no-alpha");
-
-let logLevel: LogLevel = "verbose";
+/**
+ * Logging verbosity.
+ */
+let logLevel: LogLevel = "normal";
 
 if (process.argv.includes("--debug")) {
   logLevel = "debug";
 }
 
-if (process.argv.includes("--quiet")) {
-  logLevel = "quiet";
-}
+const logger = createLogger(logLevel);
+
+/**
+ * Conversion options.
+ */
+const preserveAlpha = !process.argv.includes("--no-alpha");
 
 const quality = getNumberFlag("--quality", 50);
 
 const speed = getNumberFlag("--speed", 8);
 
-// Config validation occurs downstream
+/**
+ * Config validation occurs downstream.
+ */
 const preset = getStringFlag("--preset") as PresetName | undefined;
 
-// Execute conversion engine
+logger.debug("CLI options", {
+  input,
+  output,
+  preset,
+  quality,
+  speed,
+  preserveAlpha,
+  logLevel,
+});
+
+/**
+ * Execute conversion engine.
+ */
 const result = await convert({
   input,
   output,
@@ -80,10 +110,12 @@ const result = await convert({
   logLevel,
 });
 
-console.log("\nConversion complete.\n");
+logger.log("\nConversion complete.\n");
 
-// CLI consumes structured engine results
-console.log({
+/**
+ * Present structured conversion results.
+ */
+logger.log({
   frames: result.sourceFrameCount,
 
   inputSize: formatBytes(result.inputSize),

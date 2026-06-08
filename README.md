@@ -1,79 +1,53 @@
 # aviphy
 
-Convert animated GIF and WebP images into animated AVIF using Bun and `avifenc`.
+Convert animated GIF and WebP images into animated AVIF.
 
-`aviphy` is designed primarily as a programmable conversion library for:
+Aviphy is a JavaScript library designed for automated image conversion workflows, media pipelines, build tooling, and batch processing.
 
-- automation scripts
-- media pipelines
-- Bun tooling
-- batch processing
-- developer workflows
+Platform-specific `avifenc` binaries are bundled automatically, so no additional system dependencies are required.
 
-It supports:
+## Features
 
-- animated GIF input
-- animated WebP input
-- animated AVIF output
-- alpha transparency
-- configurable quality/speed presets
-- progress callbacks
-- quiet / verbose / debug logging modes
-- cross-platform CI validation
+- Animated GIF input
+- Animated WebP input
+- Animated AVIF output
+- Alpha transparency support
+- Quality and speed controls
+- Built-in encoder presets
+- Progress callbacks
+- Normal and debug logging
+- Bundled macOS, Linux, and Windows binaries
+- Node.js and Bun compatible
 
----
-
-# Requirements
-
-This package requires `avifenc` to be installed and available on your system PATH.
-
-## macOS
+## Installation
 
 ```bash
-brew install libavif
+npm install @ozymandias724/aviphy
 ```
 
-## Ubuntu / Debian
+or
 
 ```bash
-sudo apt install libavif-bin
+bun add @ozymandias724/aviphy
 ```
 
-## Windows
-
-Download prebuilt binaries from:
-
-https://github.com/AOMediaCodec/libavif/releases
-
-Ensure `avifenc.exe` is available on your PATH.
-
----
-
-# Installation
-
-```bash
-bun add aviphy
-```
-
----
-
-# Quick Start
+## Quick Start
 
 ```ts
-import { convert } from "aviphy";
+import { convert } from "@ozymandias724/aviphy";
 
-await convert({
+const result = await convert({
   input: "./input.gif",
   output: "./output.avif",
 });
+
+console.log(result);
 ```
 
----
-
-# Basic Example
+## Basic Example
 
 ```ts
-import { convert } from "aviphy";
+import { convert } from "@ozymandias724/aviphy";
 
 const result = await convert({
   input: "./input.webp",
@@ -84,110 +58,93 @@ const result = await convert({
   quality: 60,
   speed: 6,
 
-  logLevel: "verbose",
+  logLevel: "normal",
 });
 
 console.log(result);
 ```
 
----
+## Logging
 
-# Logging Modes
+### normal (default)
 
-## quiet (default)
-
-Minimal/no console output.
-
-Recommended for:
-
-- APIs
-- automation
-- embedded usage
-- scripting pipelines
-
----
-
-## verbose
-
-Human-friendly operational logging.
+Human-friendly conversion progress.
 
 Includes:
 
 - metadata loading
+- conversion settings
 - encoder startup
-- conversion timing
-- compression results
+- conversion progress
 
----
+### debug
 
-## debug
+Includes all normal logging plus:
 
-Maximum diagnostic visibility.
+- frame processing details
+- encoder diagnostics
+- subprocess lifecycle information
+- binary resolution information
 
-Includes:
-
-- frame processing logs
-- raw encoder diagnostics
-- subprocess debugging information
-- encoder lifecycle details
-
----
-
-# API
-
-## convert(options)
+Example:
 
 ```ts
 await convert({
+  input: "./input.webp",
+  output: "./output.avif",
+
+  logLevel: "debug",
+});
+```
+
+## API
+
+### convert(options)
+
+```ts
+const result = await convert({
   input: "./input.gif",
   output: "./output.avif",
 });
 ```
 
----
-
-# ConvertOptions
+### ConvertOptions
 
 ```ts
 type ConvertOptions = {
   input: string;
   output: string;
 
-  preset?: PresetName;
+  preset?: "fast" | "balanced" | "quality";
 
   quality?: number;
   speed?: number;
 
   preserveAlpha?: boolean;
 
-  logLevel?: "quiet" | "verbose" | "debug";
+  logLevel?: "normal" | "debug";
 
-  onProgress?: (
-    event: ConversionProgressEvent,
-  ) => void;
+  onProgress?: (event: ConversionProgressEvent) => void;
 };
 ```
 
----
-
-# Presets
+## Presets
 
 ```ts
-preset: "fast"
-preset: "balanced"
-preset: "quality"
+preset: "fast";
+preset: "balanced";
+preset: "quality";
 ```
 
-Presets provide sensible quality/speed defaults while still allowing explicit overrides.
+Presets provide sensible quality and speed defaults while still allowing explicit overrides.
 
----
-
-# Result Object
+## Result Object
 
 ```ts
 {
   inputSize: number;
   outputSize: number;
+
   reductionPercent: number;
 
   sourceFrameCount: number;
@@ -196,16 +153,14 @@ Presets provide sensible quality/speed defaults while still allowing explicit ov
 }
 ```
 
----
+## Progress Events
 
-# Progress Events
-
-`aviphy` supports progress callbacks for custom:
+Aviphy supports progress callbacks for:
 
 - progress bars
 - spinners
 - telemetry
-- logging systems
+- custom logging
 - UI updates
 
 Example:
@@ -221,9 +176,7 @@ await convert({
 });
 ```
 
----
-
-# CLI Utility
+## CLI Utility
 
 A lightweight CLI utility is included primarily for:
 
@@ -237,9 +190,7 @@ Example:
 bun run src/cli.ts fixtures/test.gif tmp/output.avif --debug
 ```
 
----
-
-# Development
+## Development
 
 Run tests:
 
@@ -247,15 +198,18 @@ Run tests:
 bun test
 ```
 
-Run tests with coverage:
+Build:
 
 ```bash
-bun test --coverage
+bun run build
 ```
 
----
+Create an npm package:
 
-# License
+```bash
+npm pack
+```
+
+## License
 
 MIT
-

@@ -1,6 +1,6 @@
 {
   "name": "@ozymandias724/aviphy",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Animated image to AVIF conversion pipeline built with Bun and Sharp.",
   "type": "module",
   "main": "./dist/index.js",
@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "bun build ./index.ts --outdir ./dist --target bun && tsc -p tsconfig.build.json",
+    "build": "bun build ./index.ts --outdir ./dist --target node && tsc -p tsconfig.build.json",
     "test": "bun test"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
   "license": "MIT",
   "files": [
     "dist",
+    "bin",
     "README.md",
     "LICENSE"
   ],
