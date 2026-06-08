@@ -90,8 +90,4 @@ jobs:
       # Actions ->
       # New repository secret
       - name: Publish to NPM
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_SECRET }}
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-          npm publish --access public --provenance
+        run: npm publish --access public --provenance
