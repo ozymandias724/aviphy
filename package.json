@@ -1,6 +1,6 @@
 {
   "name": "@ozymandias724/aviphy",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Animated image to AVIF conversion pipeline built with Bun and Sharp.",
   "type": "module",
   "main": "./dist/index.js",
