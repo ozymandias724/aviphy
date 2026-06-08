@@ -24,6 +24,16 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      # Setup Node.js
+      #
+      # Required for npm Trusted Publishing
+      # and provenance generation.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
       # Install project dependencies
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -61,8 +71,8 @@ jobs:
       # package.json version.
       #
       # Example:
-      #   tag: v0.1.2
-      #   package.json: 0.1.2
+      #   tag: v0.3.0
+      #   package.json: 0.3.0
       - name: Verify version matches tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -78,15 +88,19 @@ jobs:
             exit 1
           fi
 
-      # Publish package to npm
+      # Verify GitHub has exposed
+      # an OIDC identity token.
       #
-      # Requires repository secret:
-      #   NPM_TOKEN
+      # Trusted Publishing cannot work
+      # without this.
+      - name: Verify OIDC available
+        run: |
+          echo "OIDC URL present:"
+          test -n "$ACTIONS_ID_TOKEN_REQUEST_URL" && echo "yes" || echo "no"
+
+      # Publish package to npm using
+      # Trusted Publishing (OIDC).
       #
-      # GitHub:
-      # Settings ->
-      # Secrets and variables ->
-      # Actions ->
-      # New repository secret
+      # No npm token required.
       - name: Publish to NPM
         run: npm publish --access public --provenance
