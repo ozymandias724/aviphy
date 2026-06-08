@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { convert } from "../src/convert";
@@ -57,8 +58,6 @@ describe("convert", () => {
       speed: 8,
 
       preserveAlpha: true,
-
-      debug: false,
     });
 
     // Bun-native output handle
@@ -87,8 +86,6 @@ describe("convert", () => {
       speed: 8,
 
       preserveAlpha: true,
-
-      debug: false,
     });
 
     const outputFile = Bun.file(WEBP_OUTPUT);
@@ -97,6 +94,27 @@ describe("convert", () => {
 
     expect(outputFile.size).toBeGreaterThan(0);
 
+    expect(result.sourceFrameCount).toBeGreaterThan(0);
+  });
+
+  test("converts animated GIF buffer to AVIF", async () => {
+    const payload = fs.readFileSync("fixtures/test.gif");
+
+    const result = await convert({
+      input: payload,
+
+      output: GIF_OUTPUT,
+
+      quality: 50,
+      speed: 8,
+
+      preserveAlpha: true,
+    });
+
+    const outputFile = Bun.file(GIF_OUTPUT);
+
+    expect(await outputFile.exists()).toBe(true);
+    expect(outputFile.size).toBeGreaterThan(0);
     expect(result.sourceFrameCount).toBeGreaterThan(0);
   });
 
@@ -113,8 +131,6 @@ describe("convert", () => {
         speed: 8,
 
         preserveAlpha: true,
-
-        debug: false,
       }),
     ).rejects.toThrow();
   });

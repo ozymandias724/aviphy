@@ -40,7 +40,9 @@ export async function convert(
   /**
    * Capture original input size for reporting.
    */
-  const inputSize = fs.statSync(input).size;
+  const inputSize = typeof input === "string"
+    ? fs.statSync(input).size
+    : input.length;
 
   logger.log("Loading animation metadata...");
 

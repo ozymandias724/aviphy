@@ -15,10 +15,10 @@ export type AnimationMetadata = {
 
 // Extract normalized animation metadata
 export async function getAnimationMetadata(
-  input: string
+  input: string | Buffer
 ): Promise<AnimationMetadata> {
 
-  // Sharp handles animated raster parsing
+  // Sharp handles both filesystem paths and in-memory buffers.
   const image = sharp(input, {
     animated: true
   });
