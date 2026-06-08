@@ -9,7 +9,7 @@ export type AnimationFrame = {
 };
 
 type ExtractFrameOptions = {
-  input: string;
+  input: string | Buffer;
   frame: number;
   hasAlpha: boolean;
 };

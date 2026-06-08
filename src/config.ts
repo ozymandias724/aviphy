@@ -14,7 +14,7 @@ import { PRESETS, type PresetName } from "./presets";
  * to consume without additional checks.
  */
 export type ResolvedConfig = {
-  input: string;
+  input: string | Buffer;
   output: string;
   preset?: PresetName;
   quality: number;
@@ -30,7 +30,7 @@ export type ResolvedConfig = {
  * normalized into a ResolvedConfig.
  */
 export type ConvertOptions = {
-  input: string;
+  input: string | Buffer;
   output: string;
   preset?: PresetName;
   quality?: number;
@@ -61,21 +61,29 @@ function assertInRange(value: number, min: number, max: number, name: string) {
  * Failing early produces clearer errors and
  * avoids expensive downstream work.
  */
-function validateFilesystem(input: string, output: string) {
+function validateFilesystem(input: string | Buffer, output: string) {
   /**
-   * Input must exist.
+   * If input is a filesystem path, ensure it exists and is a file.
+   * Buffer input bypasses filesystem validation because the source
+   * data is already in memory.
    */
-  if (!fs.existsSync(input)) {
-    throw new Error(`Input file does not exist: ${input}`);
-  }
+  if (typeof input === "string") {
+    if (!fs.existsSync(input)) {
+      throw new Error(`Input file does not exist: ${input}`);
+    }
 
-  /**
-   * Input must be a regular file.
-   */
-  const inputStats = fs.statSync(input);
+    const inputStats = fs.statSync(input);
 
-  if (!inputStats.isFile()) {
-    throw new Error(`Input path is not a file: ${input}`);
+    if (!inputStats.isFile()) {
+      throw new Error(`Input path is not a file: ${input}`);
+    }
+
+    const resolvedInput = path.resolve(input);
+    const resolvedOutput = path.resolve(output);
+
+    if (resolvedInput === resolvedOutput) {
+      throw new Error("Input and output paths cannot be the same.");
+    }
   }
 
   /**
@@ -88,16 +96,6 @@ function validateFilesystem(input: string, output: string) {
 
   if (!fs.existsSync(outputDirectory)) {
     throw new Error(`Output directory does not exist: ${outputDirectory}`);
-  }
-
-  /**
-   * Prevent accidental self-overwrites.
-   */
-  const resolvedInput = path.resolve(input);
-  const resolvedOutput = path.resolve(output);
-
-  if (resolvedInput === resolvedOutput) {
-    throw new Error("Input and output paths cannot be the same.");
   }
 }
 
@@ -115,10 +113,14 @@ export function resolveConfig(options: ConvertOptions): ResolvedConfig {
   } = options;
 
   /**
-   * Basic path validation.
+   * Basic input validation.
    */
-  if (!input.trim()) {
-    throw new Error("Input path is required.");
+  if (typeof input === "string") {
+    if (!input.trim()) {
+      throw new Error("Input path is required.");
+    }
+  } else if (input.length === 0) {
+    throw new Error("Input buffer is empty.");
   }
 
   if (!output.trim()) {
