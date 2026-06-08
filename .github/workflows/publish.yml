@@ -13,7 +13,6 @@ jobs:
 
     permissions:
       contents: read
-      id-token: write
 
     steps:
       # Checkout repository
@@ -26,8 +25,7 @@ jobs:
 
       # Setup Node.js
       #
-      # Required for npm Trusted Publishing
-      # and provenance generation.
+      # Required for npm publishing.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -71,8 +69,8 @@ jobs:
       # package.json version.
       #
       # Example:
-      #   tag: v0.3.0
-      #   package.json: 0.3.0
+      #   tag: v0.3.2
+      #   package.json: 0.3.2
       - name: Verify version matches tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -88,19 +86,17 @@ jobs:
             exit 1
           fi
 
-      # Verify GitHub has exposed
-      # an OIDC identity token.
+      # Publish package to npm
       #
-      # Trusted Publishing cannot work
-      # without this.
-      - name: Verify OIDC available
-        run: |
-          echo "OIDC URL present:"
-          test -n "$ACTIONS_ID_TOKEN_REQUEST_URL" && echo "yes" || echo "no"
-
-      # Publish package to npm using
-      # Trusted Publishing (OIDC).
+      # Requires GitHub repository secret:
+      #   NPM_TOKEN
       #
-      # No npm token required.
+      # GitHub:
+      # Settings
+      # → Secrets and variables
+      # → Actions
+      # → New repository secret
       - name: Publish to NPM
-        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
