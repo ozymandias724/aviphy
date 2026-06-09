@@ -1,14 +1,34 @@
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function resolveBinDir(): string {
+  const candidateDirs = [
+    // Source layout when running from the project root.
+    path.resolve(__dirname, "../bin"),
+    // Build layout when imported from generated dist files.
+    path.resolve(__dirname, "../../bin"),
+  ];
+
+  for (const candidate of candidateDirs) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    `Could not locate bundled avifenc binaries. Tried: ${candidateDirs.join(", ")}`,
+  );
+}
+
 export function resolveAvifencBinary(): string {
   const platform = os.platform();
   const arch = os.arch();
 
-  const binDir = path.resolve(__dirname, "../bin");
+  const binDir = resolveBinDir();
 
   let resolvedPath: string;
 

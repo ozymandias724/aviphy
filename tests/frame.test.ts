@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { describe, expect, test } from "bun:test";
 
 import { extractFrame } from "../src/frame";
@@ -83,6 +84,23 @@ describe("extractFrame", () => {
     expect(frame.bPlane.length).toBeGreaterThan(0);
 
     expect(frame.rPlane.length).toBeGreaterThan(0);
+  });
+
+  test("extracts planar frame data from animated GIF buffer", async () => {
+    const payload = fs.readFileSync("fixtures/test.gif");
+
+    const frame = await extractFrame({
+      input: payload,
+
+      frame: 0,
+
+      hasAlpha: true,
+    });
+
+    expect(frame.gPlane).toBeInstanceOf(Buffer);
+    expect(frame.bPlane).toBeInstanceOf(Buffer);
+    expect(frame.rPlane).toBeInstanceOf(Buffer);
+    expect(frame.aPlane).toBeInstanceOf(Buffer);
   });
 
   test("throws for nonexistent input file", async () => {

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { describe, expect, test } from "bun:test";
 
 import { resolveConfig } from "../src/config";
@@ -84,6 +85,18 @@ describe("resolveConfig", () => {
 
         logLevel: "normal",
       });
+    });
+
+    test("resolves valid buffer input", () => {
+      const config = resolveConfig({
+        input: fs.readFileSync("fixtures/test.gif"),
+
+        output: "tmp/test.avif",
+      });
+
+      expect(config.input).toBeInstanceOf(Buffer);
+      expect(config.output).toBe("tmp/test.avif");
+      expect(config.logLevel).toBe("normal");
     });
   });
 
