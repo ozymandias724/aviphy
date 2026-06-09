@@ -1,6 +1,6 @@
 {
   "name": "@ozymandias724/aviphy",
-  "version": "0.3.11",
+  "version": "0.4.0",
   "description": "Animated GIF/WebP to animated AVIF conversion with bundled avifenc binaries, Buffer support, and a packaged CLI.",
   "type": "module",
   "main": "./dist/index.js",
