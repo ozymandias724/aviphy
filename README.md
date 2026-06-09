@@ -14,8 +14,10 @@ Platform-specific `avifenc` binaries are bundled automatically, so no additional
 - Alpha transparency support
 - Quality and speed controls
 - Built-in encoder presets
+- In-memory `Buffer` input support
 - Progress callbacks
 - Normal and debug logging
+- Packaged CLI command
 - Bundled macOS, Linux, and Windows binaries
 - Node.js and Bun compatible
 
@@ -30,6 +32,8 @@ or
 ```bash
 bun add @ozymandias724/aviphy
 ```
+
+> Note: Bun is used for development and building the package, but the published library and CLI are usable without Bun.
 
 ## Quick Start
 
@@ -59,6 +63,22 @@ const result = await convert({
   speed: 6,
 
   logLevel: "normal",
+});
+
+console.log(result);
+```
+
+## Buffer Input
+
+```ts
+import fs from "node:fs";
+import { convert } from "@ozymandias724/aviphy";
+
+const inputBuffer = fs.readFileSync("./input.gif");
+
+const result = await convert({
+  input: inputBuffer,
+  output: "./output.avif",
 });
 
 console.log(result);
@@ -112,10 +132,10 @@ const result = await convert({
 
 ```ts
 type ConvertOptions = {
-  input: string;
+  input: string | Buffer;
   output: string;
 
-  preset?: "fast" | "balanced" | "quality";
+  preset?: "fast" | "balanced" | "high-quality" | "lossless";
 
   quality?: number;
   speed?: number;
@@ -133,7 +153,8 @@ type ConvertOptions = {
 ```ts
 preset: "fast";
 preset: "balanced";
-preset: "quality";
+preset: "high-quality";
+preset: "lossless";
 ```
 
 Presets provide sensible quality and speed defaults while still allowing explicit overrides.
@@ -178,19 +199,47 @@ await convert({
 
 ## CLI Utility
 
-A lightweight CLI utility is included primarily for:
+A lightweight CLI utility is included for:
 
 - local testing
 - debugging
 - development workflows
+- installed package usage
 
-Example:
+### Supported CLI options
+
+- `--preset <fast|balanced|high-quality|lossless>`
+- `--quality <0-100>`
+- `--speed <0-10>`
+- `--no-alpha` to disable alpha preservation
+- `--debug` for verbose logging
+
+Example (development):
 
 ```bash
 bun run src/cli.ts fixtures/test.gif tmp/output.avif --debug
 ```
 
+Example (packaged CLI):
+
+```bash
+npx aviphy fixtures/test.gif tmp/output.avif --quality 70 --speed 5
+```
+
+Or after a global install:
+
+```bash
+npm install -g @ozymandias724/aviphy
+aviphy fixtures/test.gif tmp/output.avif
+```
+
 ## Development
+
+Install dependencies:
+
+```bash
+bun install
+```
 
 Run tests:
 
@@ -198,15 +247,16 @@ Run tests:
 bun test
 ```
 
-Build:
+Build the package:
 
 ```bash
 bun run build
 ```
 
-Create an npm package:
+Create an npm package (build first):
 
 ```bash
+bun run build
 npm pack
 ```
 

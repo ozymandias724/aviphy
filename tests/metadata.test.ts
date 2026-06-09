@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { describe, expect, test } from "bun:test";
 
 import { getAnimationMetadata } from "../src/metadata";
@@ -57,6 +58,15 @@ describe("getAnimationMetadata", () => {
     const metadata = await getAnimationMetadata("fixtures/test.gif");
 
     expect(typeof metadata.hasAlpha).toBe("boolean");
+  });
+
+  test("extracts metadata from animated GIF buffer", async () => {
+    const payload = fs.readFileSync("fixtures/test.gif");
+
+    const metadata = await getAnimationMetadata(payload);
+
+    expect(metadata.pages).toBeGreaterThan(0);
+    expect(metadata.delays.length).toBe(metadata.pages);
   });
 
   test("throws for nonexistent input file", async () => {

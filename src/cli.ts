@@ -1,4 +1,4 @@
-/// <reference types="node" />
+#!/usr/bin/env node
 
 import { convert } from "./convert";
 
